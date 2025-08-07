@@ -1,0 +1,58 @@
+version: '3.8'
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_DATABASE: ${MONGO_DB_NAME:-product_tracking}
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USERNAME:-}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-}
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    volumes:
+      - mongo_data:/data/db
+    networks:
+      - app-network
+
+  backend:
+    build:
+      context: ./backend
+    container_name: backend
+    command: uvicorn main:app --host 0.0.0.0 --port 8000 ${BACKEND_RELOAD:---reload}
+    environment:
+      - MONGODB_URL=${MONGODB_URL:-mongodb://mongo:27017/product_tracking}
+      - ENVIRONMENT=${ENVIRONMENT:-development}
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
+    depends_on:
+      - mongo
+    volumes:
+      - ./backend:/app
+    networks:
+      - app-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    build:
+      context: ./frontend
+    container_name: frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    depends_on:
+      - backend
+    networks:
+      - app-network
+    environment:
+      - REACT_APP_API_URL=${REACT_APP_API_URL:-http://localhost:8000}
+
+volumes:
+  mongo_data:
+
+networks:
+  app-network:
+    driver: bridge
