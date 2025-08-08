@@ -1,0 +1,28 @@
+services:
+  # Backend API Service
+  - type: web
+    name: product-tracker-backend
+    env: docker
+    dockerfilePath: ./backend/Dockerfile
+    dockerContext: ./backend
+    plan: free
+    envVars:
+      - key: MONGODB_URL
+        value: # You'll set this to your MongoDB Atlas connection string
+      - key: ENVIRONMENT
+        value: production
+    healthCheckPath: /health
+
+  # Frontend Web Service  
+  - type: web
+    name: product-tracker-frontend
+    env: docker
+    dockerfilePath: ./frontend/Dockerfile.backup
+    dockerContext: ./frontend
+    plan: free
+    envVars:
+      - key: REACT_APP_API_URL
+        fromService:
+          type: web
+          name: product-tracker-backend
+          property: host

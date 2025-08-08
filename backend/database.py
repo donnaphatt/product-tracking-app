@@ -1,9 +1,6 @@
-from dotenv import load_dotenv
 import os
 from motor.motor_asyncio import AsyncIOMotorClient
 from beanie import init_beanie
-
-load_dotenv()
 
 MONGODB_URL = os.getenv("MONGODB_URL", "mongodb://mongo:27017/product_tracking")
 
