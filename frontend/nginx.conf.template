@@ -9,12 +9,12 @@ server {
         try_files $uri $uri/ /index.html;
     }
 
-    # Optional API proxy to backend (set API_PROXY_TARGET env)
+    # Optional API proxy to backend (set REACT_APP_API_URL env)
     # Example values:
     # - Local Docker Compose: http://backend:8000
-    # - Railway backend URL: https://your-backend-service.railway.app
+    # - Render backend URL: https://your-backend-service.onrender.com
     location /api/ {
-        proxy_pass ${API_PROXY_TARGET};
+        proxy_pass ${REACT_APP_API_URL};
         proxy_set_header Host $host;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
