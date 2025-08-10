@@ -1,9 +1,14 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:8000'; // Change if backend runs elsewhere
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_KEY = process.env.REACT_APP_API_KEY || 'your-secret-api-key-here';
 
 const api = axios.create({
   baseURL: API_BASE_URL,
+  headers: {
+    'X-API-Key': API_KEY,
+    'Content-Type': 'application/json',
+  },
 });
 
 export const getProducts = async () => {

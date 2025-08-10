@@ -1,5 +1,11 @@
-from fastapi import FastAPI, HTTPException, Depends
-from typing import List
+from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi.security import APIKeyHeader
+from typing import List, Optional
+import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file (for local development)
+load_dotenv()
 from database import init_db
 from models.product import Product
 from models.order import Order
@@ -9,6 +15,19 @@ from models.live_event import LiveSellingEvent
 from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(title="Product Tracking API")
+
+# API Key Authentication
+API_KEY = os.getenv("API_KEY", "your-secret-api-key-here")
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def verify_api_key(api_key: Optional[str] = Depends(api_key_header)):
+    print("API Key:", api_key)
+    if not api_key or api_key != API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key. Please provide a valid X-API-Key header.",
+        )
+    return api_key
 
 # Allow CORS for local frontend dev
 app.add_middleware(
@@ -33,7 +52,7 @@ async def health_check():
         return {"status": "unhealthy", "database": "disconnected", "error": str(e)}
 
 @app.post("/products/", response_model=ProductCreate)
-async def create_product(product: ProductCreate):
+async def create_product(product: ProductCreate, api_key: str = Depends(verify_api_key)):
     # Set both start and remaining quantity on creation
     product_doc = Product(
         name=product.name,
@@ -49,12 +68,12 @@ async def create_product(product: ProductCreate):
     return product_doc
 
 @app.get("/products/", response_model=List[ProductResponse])
-async def read_products(skip: int = 0, limit: int = 100):
+async def read_products(skip: int = 0, limit: int = 100, api_key: str = Depends(verify_api_key)):
     products = await Product.find_all().skip(skip).limit(limit).to_list()
     return products
 
 @app.delete("/products/{product_id}")
-async def delete_product(product_id: str):
+async def delete_product(product_id: str, api_key: str = Depends(verify_api_key)):
     product = await Product.get(product_id)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
@@ -62,7 +81,7 @@ async def delete_product(product_id: str):
     return {"detail": "Product deleted successfully"}
 
 @app.post("/orders/", response_model=OrderResponse)
-async def create_order(order: OrderCreate):
+async def create_order(order: OrderCreate, api_key: str = Depends(verify_api_key)):
     # Check and update product stock
     for item in order.products:
         product = await Product.get(item.product_id)
@@ -103,7 +122,7 @@ async def create_order(order: OrderCreate):
     return OrderResponse.from_order(order_doc)
 
 @app.get("/orders/", response_model=List[OrderResponse])
-async def read_orders(skip: int = 0, limit: int = 100):
+async def read_orders(skip: int = 0, limit: int = 100, api_key: str = Depends(verify_api_key)):
     orders = await Order.find_all().skip(skip).limit(limit).to_list()
     return [OrderResponse.from_order(o) for o in orders]
 
@@ -112,25 +131,25 @@ from beanie import PydanticObjectId
 # --- Live Selling Event Endpoints ---
 
 @app.post("/live_events/", response_model=LiveSellingEventResponse)
-async def create_live_event(event: LiveSellingEventCreate):
+async def create_live_event(event: LiveSellingEventCreate, api_key: str = Depends(verify_api_key)):
     obj = LiveSellingEvent(**event.dict())
     await obj.insert()
     return LiveSellingEventResponse.from_event(obj)
 
 @app.get("/live_events/", response_model=List[LiveSellingEventResponse])
-async def list_live_events():
+async def list_live_events(api_key: str = Depends(verify_api_key)):
     events = await LiveSellingEvent.find_all().to_list()
     return [LiveSellingEventResponse.from_event(e) for e in events]
 
 @app.get("/live_events/{event_id}", response_model=LiveSellingEventResponse)
-async def get_live_event(event_id: str):
+async def get_live_event(event_id: str, api_key: str = Depends(verify_api_key)):
     event = await LiveSellingEvent.get(event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
     return LiveSellingEventResponse.from_event(event)
 
 @app.delete("/live_events/{event_id}")
-async def delete_live_event(event_id: str):
+async def delete_live_event(event_id: str, api_key: str = Depends(verify_api_key)):
     event = await LiveSellingEvent.get(event_id)
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -138,14 +157,14 @@ async def delete_live_event(event_id: str):
     return {"detail": "Event deleted successfully"}
 
 @app.get("/orders/{order_id}", response_model=OrderResponse)
-async def get_order(order_id: PydanticObjectId):
+async def get_order(order_id: PydanticObjectId, api_key: str = Depends(verify_api_key)):
     order = await Order.get(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
     return OrderResponse.from_order(order)
 
 @app.patch("/orders/{order_id}", response_model=OrderResponse)
-async def update_order_status(order_id: PydanticObjectId, update: OrderUpdate):
+async def update_order_status(order_id: PydanticObjectId, update: OrderUpdate, api_key: str = Depends(verify_api_key)):
     order = await Order.get(order_id)
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
@@ -156,7 +175,7 @@ async def update_order_status(order_id: PydanticObjectId, update: OrderUpdate):
 from datetime import datetime
 
 @app.get("/analytics/")
-async def get_analytics():
+async def get_analytics(api_key: str = Depends(verify_api_key)):
     orders = await Order.find_all().to_list()
     products = await Product.find_all().to_list()
     product_lookup = {str(p.id): p for p in products}
