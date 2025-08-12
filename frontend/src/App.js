@@ -6,7 +6,10 @@ import Orders from './components/Orders';
 import Analytics from './components/Analytics';
 import AnalyticsPage from './components/AnalyticsPage';
 import LiveSellingEvents from './components/LiveSellingEvents';
-import { AppBar, Toolbar, Typography, Button, Container, Box } from '@mui/material';
+import Login from './components/Login';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { AppBar, Toolbar, Typography, Button, Container, Box, CircularProgress } from '@mui/material';
+import { Logout as LogoutIcon } from '@mui/icons-material';
 
 const navLinks = [
   { label: 'Dashboard', path: '/' },
@@ -18,13 +21,19 @@ const navLinks = [
 
 function NavBar() {
   const location = useLocation();
+  const { logout } = useAuth();
+
+  const handleLogout = () => {
+    logout();
+  };
+
   return (
     <AppBar position="static" color="primary" elevation={1}>
       <Toolbar sx={{ display: 'flex', justifyContent: 'space-between' }}>
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
           Product Tracker
         </Typography>
-        <Box>
+        <Box sx={{ display: 'flex', alignItems: 'center' }}>
           {navLinks.map(link => (
             <Button
               key={link.path}
@@ -37,15 +46,37 @@ function NavBar() {
               {link.label}
             </Button>
           ))}
+          <Button
+            onClick={handleLogout}
+            color="inherit"
+            startIcon={<LogoutIcon />}
+            sx={{ ml: 2, fontWeight: 400 }}
+          >
+            Logout
+          </Button>
         </Box>
       </Toolbar>
     </AppBar>
   );
 }
 
-function App() {
+function AppContent() {
+  const { isAuthenticated, loading, login } = useAuth();
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100vh' }}>
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return <Login onLogin={login} />;
+  }
+
   return (
-    <Router>
+    <>
       <NavBar />
       <Container maxWidth="lg" sx={{ mt: 4, mb: 4 }}>
         <Routes>
@@ -56,7 +87,17 @@ function App() {
           <Route path="/analytics" element={<AnalyticsPage />} />
         </Routes>
       </Container>
-    </Router>
+    </>
+  );
+}
+
+function App() {
+  return (
+    <AuthProvider>
+      <Router>
+        <AppContent />
+      </Router>
+    </AuthProvider>
   );
 }
 

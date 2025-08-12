@@ -7,7 +7,7 @@ services:
     dockerContext: ./backend
     plan: free
     envVars:
-      - key: API_KEY
+      - key: JWT_SECRET_KEY
         generateValue: true
     healthCheckPath: /health
 
@@ -24,8 +24,7 @@ services:
           type: web
           name: product-tracker-backend
           property: host
-      - key: REACT_APP_API_KEY
-        fromService:
-          type: web
-          name: product-tracker-backend
-          envVarKey: API_KEY
+      - key: REACT_APP_LOGIN_USERNAME
+        value: FernSudCute
+      - key: REACT_APP_LOGIN_PASSWORD
+        value: FernJ0101
