@@ -25,6 +25,6 @@ services:
           name: product-tracker-backend
           property: host
       - key: REACT_APP_LOGIN_USERNAME
-        value: FernSudCute
+        value: user_name_placeholder
       - key: REACT_APP_LOGIN_PASSWORD
-        value: FernJ0101
+        value: password_placeholder
