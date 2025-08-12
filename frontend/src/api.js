@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 // Handle API URL - add https:// if it's just a hostname from Render
-const rawApiUrl = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const rawApiUrl = process.env.REACT_APP_API_URL || 'http://localhost:4476';
 const API_BASE_URL = rawApiUrl.startsWith('http') ? rawApiUrl : `https://${rawApiUrl}.onrender.com`;
 
 const api = axios.create({
