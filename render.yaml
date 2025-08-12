@@ -15,7 +15,7 @@ services:
   - type: web
     name: product-tracker-frontend
     env: docker
-    dockerfilePath: ./frontend/Dockerfile.backup
+    dockerfilePath: ./frontend/Dockerfile.simple-fixed
     dockerContext: ./frontend
     plan: free
     envVars:
