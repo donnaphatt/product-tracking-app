@@ -18,19 +18,14 @@ RUN npm run build
 # Production stage
 FROM nginx:alpine
 
-# Install gettext for envsubst
-RUN apk add --no-cache gettext
-
 # Copy built app to nginx
 COPY --from=build /app/build /usr/share/nginx/html
 
-# Copy nginx configuration template and startup script
-COPY nginx.conf.template /etc/nginx/templates/default.conf.template
-COPY start.sh /start.sh
-RUN chmod +x /start.sh
+# Copy simple nginx configuration (no environment substitution)
+COPY nginx.conf.simple /etc/nginx/conf.d/default.conf
 
 # Expose port
 EXPOSE 80
 
-# Start with environment variable substitution
-CMD ["/start.sh"]
+# Start nginx directly (no custom script needed)
+CMD ["nginx", "-g", "daemon off;"]
